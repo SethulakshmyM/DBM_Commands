@@ -1,0 +1,1045 @@
+Normalization, LEAD & LAG, and Stored Procedures
+
+# 1. Database Normalization
+
+## 1.1 What is Normalization?
+
+Normalization is the process of organizing data into multiple related tables to reduce data duplication and maintain data consistency.
+
+It helps to:
+- Reduce data redundancy (unnecessary duplication).
+- Avoid data inconsistency.
+- Make database maintenance easier.
+- Improve data organization.
+
+### Example: Table with Data Redundancy
+
+| Student ID | Student Name | Course | Instructor |
+|---|---|---|---|
+| 101 | Arun | Python | Rahul |
+| 102 | Priya | SQL | Meena |
+| 103 | Rahul | Python | Rahul |
+| 104 | Anu | SQL | Meena |
+
+Here, course and instructor information is repeated.
+
+This can create three problems:
+
+- **Update anomaly:** If an instructor's name changes, multiple records need to be updated.
+- **Insertion anomaly:** We may not be able to add a new course unless a student enrolls in it.
+- **Deletion anomaly:** Deleting the only student enrolled in a course may also remove the only stored information about that course.
+
+Normalization helps prevent these problems.
+
+## 1.2 Types of Normalization
+
+### A. First Normal Form (1NF)
+
+A table is in 1NF when:
+1. Each cell contains only one value (atomic value).
+2. There are no repeating groups or multiple values in a single cell.
+3. Each record can be uniquely identified.
+
+**Example: Table violating 1NF**
+
+| Student ID | Student Name | Skills |
+|---|---|---|
+| 101 | Arun | Python, SQL |
+| 102 | Priya | Excel, Power BI |
+
+The Skills column contains multiple values in one cell.
+
+**After converting into 1NF:**
+
+| Student ID | Student Name | Skill |
+|---|---|---|
+| 101 | Arun | Python |
+| 101 | Arun | SQL |
+| 102 | Priya | Excel |
+| 102 | Priya | Power BI |
+
+Now each cell contains a single value.
+
+### B. Second Normal Form (2NF)
+
+A table is in 2NF when:
+1. It is already in 1NF.
+2. Every non-key attribute depends on the whole candidate key, not just part of a composite candidate key.
+
+**Example:**
+
+| Student ID | Course ID | Student Name | Course Name | Marks |
+|---|---|---|---|---:|
+| 101 | C01 | Arun | Python | 85 |
+| 101 | C02 | Arun | SQL | 90 |
+| 102 | C01 | Priya | Python | 78 |
+
+Assume Student ID and Course ID together form the composite primary key.
+
+Dependencies:
+- Student Name depends only on Student ID.
+- Course Name depends only on Course ID.
+- Marks depends on both Student ID and Course ID.
+
+Student Name and Course Name depend on only part of the composite key. This is called **partial dependency**.
+
+To achieve 2NF, divide the table into three tables:
+
+**Students**
+
+| Student ID | Student Name |
+|---|---|
+| 101 | Arun |
+| 102 | Priya |
+
+**Courses**
+
+| Course ID | Course Name |
+|---|---|
+| C01 | Python |
+| C02 | SQL |
+
+**Enrollments**
+
+| Student ID | Course ID | Marks |
+|---|---|---:|
+| 101 | C01 | 85 |
+| 101 | C02 | 90 |
+| 102 | C01 | 78 |
+
+Now each non-key attribute depends on the whole candidate key of its table.
+
+### C. Third Normal Form (3NF)
+
+A table is in 3NF when:
+1. It is already in 2NF.
+2. There is no transitive dependency of non-key attributes on a candidate key.
+
+**Example:**
+
+| Student ID | Student Name | Dept ID | Dept Name |
+|---|---|---|---|
+| 101 | Arun | D01 | Computer Science |
+| 102 | Priya | D02 | Mathematics |
+| 103 | Rahul | D01 | Computer Science |
+
+Dependencies:
+- Student ID determines Student Name and Dept ID.
+- Dept ID determines Dept Name.
+
+Therefore, Student ID determines Dept Name indirectly through Dept ID. This is called **transitive dependency**.
+
+To achieve 3NF, divide the table into two tables:
+
+**Students**
+
+| Student ID | Student Name | Dept ID |
+|---|---|---|
+| 101 | Arun | D01 |
+| 102 | Priya | D02 |
+| 103 | Rahul | D01 |
+
+**Departments**
+
+| Dept ID | Dept Name |
+|---|---|
+| D01 | Computer Science |
+| D02 | Mathematics |
+
+### 1.3 Summary of Normal Forms
+
+| Normal Form | Main Rule |
+|---|---|
+| 1NF | Each cell must contain a single value. |
+| 2NF | No partial dependency on a composite candidate key. |
+| 3NF | No transitive dependency of non-key attributes on candidate keys. |
+
+## 1.4 Practice Questions: Normalization with Solutions
+
+**Question 1:** Identify the normal form violation in the following table.
+
+| Employee ID | Employee Name | Skills |
+|---|---|---|
+| 1 | Arun | Python, SQL |
+| 2 | Priya | Excel, Power BI |
+
+**Solution:**
+
+The table violates 1NF because the Skills column contains multiple values in one cell.
+
+To convert it into 1NF:
+
+| Employee ID | Employee Name | Skill |
+|---|---|---|
+| 1 | Arun | Python |
+| 1 | Arun | SQL |
+| 2 | Priya | Excel |
+| 2 | Priya | Power BI |
+
+Now each cell contains only one value.
+
+**Question 2:** Consider the following table:
+
+| Student ID | Course ID | Student Name | Course Name | Marks |
+|---|---|---|---|---:|
+| 101 | C01 | Arun | Python | 85 |
+| 101 | C02 | Arun | SQL | 90 |
+| 102 | C01 | Priya | Python | 78 |
+
+Identify the composite key and partial dependencies. Divide the table to achieve 2NF.
+
+**Solution:**
+
+Composite key: Student ID + Course ID.
+
+Partial dependencies:
+- Student ID → Student Name
+- Course ID → Course Name
+
+Marks depends on both Student ID and Course ID.
+
+Separate the table into:
+
+Students:
+
+| Student ID | Student Name |
+|---|---|
+| 101 | Arun |
+| 102 | Priya |
+
+Courses:
+
+| Course ID | Course Name |
+|---|---|
+| C01 | Python |
+| C02 | SQL |
+
+Enrollments:
+
+| Student ID | Course ID | Marks |
+|---|---|---:|
+| 101 | C01 | 85 |
+| 101 | C02 | 90 |
+| 102 | C01 | 78 |
+
+**Question 3:** Identify the transitive dependency:
+
+| Employee ID | Employee Name | Dept ID | Dept Name |
+|---|---|---|---|
+| 1 | Arun | D01 | HR |
+| 2 | Priya | D02 | Finance |
+| 3 | Rahul | D01 | HR |
+
+**Solution:**
+
+Dependencies:
+
+- Employee ID → Employee Name, Dept ID
+- Dept ID → Dept Name
+
+Therefore, Employee ID determines Dept Name indirectly through Dept ID.
+
+This is a transitive dependency.
+
+Separate into:
+
+Employees:
+
+| Employee ID | Employee Name | Dept ID |
+|---|---|---|
+| 1 | Arun | D01 |
+| 2 | Priya | D02 |
+| 3 | Rahul | D01 |
+
+Departments:
+
+| Dept ID | Dept Name |
+|---|---|
+| D01 | HR |
+| D02 | Finance |
+
+This removes the transitive dependency.
+
+---
+
+# 2. LEAD and LAG Window Functions
+
+## 2.1 Introduction
+
+LEAD and LAG are SQL window functions used to access values from other rows without performing a self-join.
+
+- **LAG():** Retrieves a value from a previous row.
+- **LEAD():** Retrieves a value from a following row.
+
+They are useful for comparing current records with previous or next records.
+
+## 2.2 LAG() Function
+
+LAG() retrieves a value from a previous row based on the specified ordering.
+
+### Syntax
+
+```sql
+LAG(column_name, offset, default_value)
+OVER (ORDER BY column_name);
+```
+
+Parameters:
+- `column_name`: Column whose previous value is required.
+- `offset`: Number of rows to move backwards. Default is 1.
+- `default_value`: Value returned when a previous row does not exist. Default is NULL.
+
+### Example
+
+Create a monthly sales table:
+
+```sql
+CREATE TABLE monthly_sales (
+    month_id INT PRIMARY KEY,
+    month_name VARCHAR(20),
+    sales INT
+);
+```
+
+Insert sample records:
+
+```sql
+INSERT INTO monthly_sales VALUES
+(1, 'January', 10000),
+(2, 'February', 15000),
+(3, 'March', 12000),
+(4, 'April', 20000),
+(5, 'May', 18000);
+```
+
+Retrieve the previous month's sales:
+
+```sql
+SELECT
+    month_name,
+    sales,
+    LAG(sales) OVER(ORDER BY month_id) AS previous_sales
+FROM monthly_sales;
+```
+
+**Output:**
+
+| Month | Sales | Previous Sales |
+|---|---:|---:|
+| January | 10000 | NULL |
+| February | 15000 | 10000 |
+| March | 12000 | 15000 |
+| April | 20000 | 12000 |
+| May | 18000 | 20000 |
+
+### Using an Offset
+
+Retrieve the sales value from two rows earlier:
+
+```sql
+SELECT
+    month_name,
+    sales,
+    LAG(sales, 2) OVER(ORDER BY month_id) AS sales_two_months_ago
+FROM monthly_sales;
+```
+
+### Practical Example: Comparing Sales
+
+Calculate the difference between current and previous month's sales:
+
+```sql
+SELECT
+    month_name,
+    sales,
+    LAG(sales) OVER(ORDER BY month_id) AS previous_sales,
+    sales - LAG(sales) OVER(ORDER BY month_id) AS sales_difference
+FROM monthly_sales;
+```
+
+This helps identify whether sales have increased or decreased.
+
+## 2.3 LEAD() Function
+
+LEAD() retrieves a value from a following row.
+
+### Syntax
+
+```sql
+LEAD(column_name, offset, default_value)
+OVER (ORDER BY column_name);
+```
+
+### Example
+
+```sql
+SELECT
+    month_name,
+    sales,
+    LEAD(sales) OVER(ORDER BY month_id) AS next_month_sales
+FROM monthly_sales;
+```
+
+**Output:**
+
+| Month | Sales | Next Month Sales |
+|---|---:|---:|
+| January | 10000 | 15000 |
+| February | 15000 | 12000 |
+| March | 12000 | 20000 |
+| April | 20000 | 18000 |
+| May | 18000 | NULL |
+
+## 2.4 Using PARTITION BY with LEAD and LAG
+
+We can use PARTITION BY to perform these calculations separately for each group.
+
+Example:
+
+```sql
+SELECT
+    Category,
+    `Order Date`,
+    Sales,
+    LAG(Sales) OVER(
+        PARTITION BY Category
+        ORDER BY `Order Date`, `Order ID`
+    ) AS previous_sales
+FROM orders;
+```
+
+- `PARTITION BY Category` divides the records into separate categories.
+- `ORDER BY` arranges records within each category.
+- `LAG(Sales)` retrieves the previous row's sales value within the same category.
+
+## 2.5 Difference Between LEAD and LAG
+
+| LAG() | LEAD() |
+|---|---|
+| Retrieves a previous row's value. | Retrieves a following row's value. |
+| Moves backwards. | Moves forwards. |
+| Used for previous-period comparisons. | Used for next-period comparisons. |
+
+## 2.6 Practice Questions: LEAD and LAG with Solutions
+
+Use the `monthly_sales` table created above.
+
+**Question 1:** Display each month's sales along with the previous month's sales using LAG().
+
+**Solution:**
+
+```sql
+SELECT
+    month_name,
+    sales,
+    LAG(sales) OVER(
+        ORDER BY month_id
+    ) AS previous_sales
+FROM monthly_sales;
+```
+
+**Question 2:** Display each month's sales along with the next month's sales using LEAD().
+
+**Solution:**
+
+```sql
+SELECT
+    month_name,
+    sales,
+    LEAD(sales) OVER(
+        ORDER BY month_id
+    ) AS next_month_sales
+FROM monthly_sales;
+```
+
+**Question 3:** Retrieve the sales value from two months earlier using LAG().
+
+**Solution:**
+
+```sql
+SELECT
+    month_name,
+    sales,
+    LAG(sales, 2) OVER(
+        ORDER BY month_id
+    ) AS sales_two_months_ago
+FROM monthly_sales;
+```
+
+**Question 4:** Calculate the difference between current month's sales and previous month's sales.
+
+**Solution:**
+
+```sql
+SELECT
+    month_name,
+    sales,
+    LAG(sales) OVER(
+        ORDER BY month_id
+    ) AS previous_sales,
+    sales - LAG(sales) OVER(
+        ORDER BY month_id
+    ) AS sales_difference
+FROM monthly_sales;
+```
+
+**Question 5:** Display the previous month's sales and next month's sales in the same query.
+
+**Solution:**
+
+```sql
+SELECT
+    month_name,
+    sales,
+    LAG(sales) OVER(
+        ORDER BY month_id
+    ) AS previous_sales,
+    LEAD(sales) OVER(
+        ORDER BY month_id
+    ) AS next_sales
+FROM monthly_sales;
+```
+
+**Question 6:** Calculate the percentage change in sales compared with the previous month.
+
+Formula:
+
+Percentage Change = ((Current Sales - Previous Sales) / Previous Sales) × 100
+
+**Solution:**
+
+```sql
+SELECT
+    month_name,
+    sales,
+    LAG(sales) OVER(
+        ORDER BY month_id
+    ) AS previous_sales,
+    ROUND(
+        (sales - LAG(sales) OVER(
+            ORDER BY month_id
+        )) * 100.0
+        / NULLIF(LAG(sales) OVER(
+            ORDER BY month_id
+        ), 0),
+        2
+    ) AS percentage_change
+FROM monthly_sales;
+```
+
+`NULLIF()` prevents division by zero. The first month returns NULL because it has no previous month.
+
+**Question 7:** Create a table named `employee_salary` with the following records.
+
+```sql
+CREATE TABLE employee_salary (
+    employee_id INT PRIMARY KEY,
+    employee_name VARCHAR(50),
+    department VARCHAR(30),
+    salary INT
+);
+```
+
+Insert records:
+
+```sql
+INSERT INTO employee_salary VALUES
+(101, 'Arun', 'IT', 40000),
+(102, 'Priya', 'IT', 50000),
+(103, 'Rahul', 'IT', 55000),
+(104, 'Anu', 'HR', 35000),
+(105, 'Meena', 'HR', 45000),
+(106, 'Kiran', 'HR', 48000);
+```
+
+**7(a). Display each employee's salary and previous employee's salary.**
+
+```sql
+SELECT
+    employee_name,
+    department,
+    salary,
+    LAG(salary) OVER(
+        ORDER BY employee_id
+    ) AS previous_salary
+FROM employee_salary;
+```
+
+**7(b). Display each employee's salary and next employee's salary.**
+
+```sql
+SELECT
+    employee_name,
+    department,
+    salary,
+    LEAD(salary) OVER(
+        ORDER BY employee_id
+    ) AS next_salary
+FROM employee_salary;
+```
+
+**7(c). Retrieve the previous salary separately within each department.**
+
+```sql
+SELECT
+    employee_name,
+    department,
+    salary,
+    LAG(salary) OVER(
+        PARTITION BY department
+        ORDER BY employee_id
+    ) AS previous_salary
+FROM employee_salary;
+```
+
+**7(d). Calculate the salary difference between the current employee and the previous employee in the same department.**
+
+```sql
+SELECT
+    employee_name,
+    department,
+    salary,
+    LAG(salary) OVER(
+        PARTITION BY department
+        ORDER BY employee_id
+    ) AS previous_salary,
+    salary - LAG(salary) OVER(
+        PARTITION BY department
+        ORDER BY employee_id
+    ) AS salary_difference
+FROM employee_salary;
+```
+
+---
+
+# 3. Stored Procedures in MySQL
+
+## 3.1 What is a Stored Procedure?
+
+A stored procedure is a collection of SQL statements saved inside the database that can be executed whenever required.
+
+Instead of writing the same SQL queries repeatedly, we can create a stored procedure once and call it whenever needed.
+
+### Advantages
+
+- Reusability of SQL code.
+- Reduces repeated coding.
+- Easier maintenance of frequently used database operations.
+- Supports access control through procedure permissions.
+- Allows multiple SQL statements to be executed together.
+
+## 3.2 Creating a Stored Procedure
+
+### Syntax
+
+```sql
+DELIMITER $$
+
+CREATE PROCEDURE procedure_name()
+BEGIN
+
+    SQL statements;
+
+END $$
+
+DELIMITER ;
+```
+
+### Example: Retrieve Furniture Orders
+
+```sql
+DELIMITER $$
+
+CREATE PROCEDURE GetFurnitureOrders()
+BEGIN
+
+    SELECT *
+    FROM orders
+    WHERE Category = 'Furniture';
+
+END $$
+
+DELIMITER ;
+```
+
+The procedure is now saved in the database.
+
+## 3.3 Executing a Stored Procedure
+
+Use the CALL statement.
+
+```sql
+CALL GetFurnitureOrders();
+```
+
+This executes the SELECT query stored inside the procedure and displays all Furniture orders.
+
+## 3.4 Stored Procedures with Parameters
+
+Parameters allow us to pass values into a procedure or receive values from it.
+
+### A. IN Parameter
+
+An IN parameter accepts a value from the calling statement.
+
+Example: Retrieve orders for a particular category.
+
+```sql
+DELIMITER $$
+
+CREATE PROCEDURE GetOrdersByCategory(
+    IN p_category VARCHAR(50)
+)
+BEGIN
+
+    SELECT *
+    FROM orders
+    WHERE Category = p_category;
+
+END $$
+
+DELIMITER ;
+```
+
+Execution:
+
+```sql
+CALL GetOrdersByCategory('Furniture');
+
+CALL GetOrdersByCategory('Technology');
+
+CALL GetOrdersByCategory('Office Supplies');
+```
+
+The same procedure can be used for different category values.
+
+### B. OUT Parameter
+
+An OUT parameter returns a value from the procedure to the calling statement.
+
+Example: Retrieve total sales.
+
+```sql
+DELIMITER $$
+
+CREATE PROCEDURE GetTotalSales(
+    OUT total_amount DECIMAL(15,2)
+)
+BEGIN
+
+    SELECT SUM(Sales)
+    INTO total_amount
+    FROM orders;
+
+END $$
+
+DELIMITER ;
+```
+
+Execution:
+
+```sql
+CALL GetTotalSales(@sales);
+
+SELECT @sales;
+```
+
+Explanation:
+- `OUT total_amount` defines an output parameter.
+- `SELECT SUM(Sales)` calculates total sales.
+- `INTO total_amount` stores the result in the output parameter.
+- `@sales` receives the returned value.
+- `SELECT @sales` displays the result.
+
+### C. INOUT Parameter
+
+An INOUT parameter accepts an initial value and can return a modified value.
+
+Example:
+
+```sql
+DELIMITER $$
+
+CREATE PROCEDURE IncreaseValue(
+    INOUT amount INT
+)
+BEGIN
+
+    SET amount = amount + 100;
+
+END $$
+
+DELIMITER ;
+```
+
+Execution:
+
+```sql
+SET @value = 500;
+
+CALL IncreaseValue(@value);
+
+SELECT @value;
+```
+
+Output:
+
+| @value |
+|---:|
+| 600 |
+
+Here, 500 is passed into the procedure, increased by 100, and returned.
+
+## 3.5 Types of Procedure Parameters
+
+| Parameter | Purpose |
+|---|---|
+| IN | Passes a value into the procedure. |
+| OUT | Returns a value from the procedure. |
+| INOUT | Accepts an input value and returns a modified value. |
+
+## 3.6 Viewing and Deleting Stored Procedures
+
+To view procedures in the current database:
+
+```sql
+SHOW PROCEDURE STATUS
+WHERE Db = DATABASE();
+```
+
+To delete a procedure:
+
+```sql
+DROP PROCEDURE GetFurnitureOrders;
+```
+
+To avoid an error if it does not exist:
+
+```sql
+DROP PROCEDURE IF EXISTS GetFurnitureOrders;
+```
+
+## 3.7 Practice Questions: Stored Procedures with Solutions
+
+Use the existing `orders` table.
+
+**Question 1:** Create a stored procedure named `GetAllOrders` to display all records from the orders table.
+
+**Solution:**
+
+```sql
+DELIMITER $$
+
+CREATE PROCEDURE GetAllOrders()
+BEGIN
+
+    SELECT *
+    FROM orders;
+
+END $$
+
+DELIMITER ;
+```
+
+Execute:
+
+```sql
+CALL GetAllOrders();
+```
+
+**Question 2:** Create a stored procedure named `GetOrdersByState` that accepts a state as an IN parameter and displays all orders from that state.
+
+**Solution:**
+
+```sql
+DELIMITER $$
+
+CREATE PROCEDURE GetOrdersByState(
+    IN p_state VARCHAR(50)
+)
+BEGIN
+
+    SELECT *
+    FROM orders
+    WHERE State = p_state;
+
+END $$
+
+DELIMITER ;
+```
+
+Execute:
+
+```sql
+CALL GetOrdersByState('California');
+```
+
+**Question 3:** Create a stored procedure named `GetOrdersBySegment` that accepts a segment as an IN parameter and displays all orders belonging to that segment.
+
+**Solution:**
+
+```sql
+DELIMITER $$
+
+CREATE PROCEDURE GetOrdersBySegment(
+    IN p_segment VARCHAR(50)
+)
+BEGIN
+
+    SELECT *
+    FROM orders
+    WHERE Segment = p_segment;
+
+END $$
+
+DELIMITER ;
+```
+
+Execute:
+
+```sql
+CALL GetOrdersBySegment('Consumer');
+```
+
+**Question 4:** Create a stored procedure named `GetTotalProfit` that uses an OUT parameter to return the total profit from the orders table.
+
+**Solution:**
+
+```sql
+DELIMITER $$
+
+CREATE PROCEDURE GetTotalProfit(
+    OUT total_profit DECIMAL(15,2)
+)
+BEGIN
+
+    SELECT SUM(Profit)
+    INTO total_profit
+    FROM orders;
+
+END $$
+
+DELIMITER ;
+```
+
+Execute:
+
+```sql
+CALL GetTotalProfit(@profit);
+
+SELECT @profit;
+```
+
+**Question 5:** Create a stored procedure named `GetCategorySales` that accepts a category as an IN parameter and displays the total sales for that category.
+
+**Solution:**
+
+```sql
+DELIMITER $$
+
+CREATE PROCEDURE GetCategorySales(
+    IN p_category VARCHAR(50)
+)
+BEGIN
+
+    SELECT
+        Category,
+        SUM(Sales) AS total_sales
+    FROM orders
+    WHERE Category = p_category
+    GROUP BY Category;
+
+END $$
+
+DELIMITER ;
+```
+
+Execute:
+
+```sql
+CALL GetCategorySales('Furniture');
+```
+
+**Question 6:** Create a stored procedure named `GetAverageSales` that returns the average sales using an OUT parameter.
+
+**Solution:**
+
+```sql
+DELIMITER $$
+
+CREATE PROCEDURE GetAverageSales(
+    OUT avg_sales DECIMAL(15,2)
+)
+BEGIN
+
+    SELECT AVG(Sales)
+    INTO avg_sales
+    FROM orders;
+
+END $$
+
+DELIMITER ;
+```
+
+Execute:
+
+```sql
+CALL GetAverageSales(@average);
+
+SELECT @average;
+```
+
+**Question 7:** Create a stored procedure named `GetLossOrders` that accepts a category as an IN parameter and displays orders from that category where profit is negative.
+
+**Solution:**
+
+```sql
+DELIMITER $$
+
+CREATE PROCEDURE GetLossOrders(
+    IN p_category VARCHAR(50)
+)
+BEGIN
+
+    SELECT *
+    FROM orders
+    WHERE Category = p_category
+      AND Profit < 0;
+
+END $$
+
+DELIMITER ;
+```
+
+Execute:
+
+```sql
+CALL GetLossOrders('Furniture');
+```
+
+**Question 8:** Create a stored procedure that accepts a minimum sales amount as an IN parameter and displays all orders where sales are greater than that amount.
+
+**Solution:**
+
+```sql
+DELIMITER $$
+
+CREATE PROCEDURE GetOrdersByMinimumSales(
+    IN p_min_sales DECIMAL(15,2)
+)
+BEGIN
+
+    SELECT *
+    FROM orders
+    WHERE Sales > p_min_sales;
+
+END $$
+
+DELIMITER ;
+```
+
+Execute:
+
+```sql
+CALL GetOrdersByMinimumSales(1000);
+```
